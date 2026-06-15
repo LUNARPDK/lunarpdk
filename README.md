@@ -1,4 +1,4 @@
-# DUNE PDK Monte Carlo
+# LUNAR PDK Monte Carlo
 
 Toy Monte Carlo for **bound-nucleon decay** (proton and neutron) in a DUNE 10 kt
 liquid-argon module. The default channel is **p → K⁺ν̄**; a range of SUSY/GUT
