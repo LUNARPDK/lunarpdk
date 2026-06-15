@@ -1,0 +1,22 @@
+FSI cross-section provenance
+============================
+
+These files are the raw nucleon-nucleon cross-section tables used by NuWro's
+intranuclear cascade (kaskada), kept here for provenance and reproducibility:
+
+  kaskada_NN_xsec_0.dat   pp/nn ("ii") and pn ("ij") total cross sections [mb]
+  kaskada_NN_inel_0.dat   inelastic (single-pion-production) fractions
+  kaskada_NN_angle_0.dat  Metropolis angular-distribution coefficients
+
+Source: N. Metropolis et al., Phys. Rev. 110 (1958) 185-203 and 204-219,
+copied verbatim from
+  zzLegacy/NuWro/nuwro/data/input/kaskada_NN_*_0.dat .
+
+The PDK FSI cascade does NOT read these files at run time. The numeric values
+(together with the pion-nucleon Metropolis table from NuWro's
+src/Interaction.cc, PiData::setMetropolis) are embedded directly in
+include/PDKFsiXsec.h so the generator stays header-only and self-contained. The
+files are retained so the embedded tables can be checked against their origin.
+
+The K+/K0, Kbar and eta cross sections have no Metropolis table; they are
+compact analytic parametrizations defined in include/PDKFsiXsec.h.

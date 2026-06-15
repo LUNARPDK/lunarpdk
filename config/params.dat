@@ -1,0 +1,5 @@
+# Polynomial coefficients for Fermi Momentum PDF
+# c0 c1 c2 c3
+0.0 4.0 -16.0 0.0
+# Range [min_p, max_p] and Max Height for Rejection Sampling
+0.0 0.25 0.5
