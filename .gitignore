@@ -1,5 +1,4 @@
 build/EventPredictor
-build/EventPredictor
 build/LunarPDKGenerator
 data/*.txt
 # Compiled source #
@@ -44,3 +43,4 @@ Thumbs.db
 
 *.root
 *.png
+build/PDKMCGenerator
