@@ -50,3 +50,6 @@ report/kaon_binding_summary.txt
 report/kaon_summary.txt
 report/momentum_summary.txt
 report/fsi_summary.txt
+report/event_predictions.txt
+report/fsi_multiplicity_summary.txt
+report/window_summary.txt
