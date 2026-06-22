@@ -1,3 +1,5 @@
+// Author: Jarek Nowak <lunar_pdk@proton.me>, 2026
+//
 // Per-channel signal-meson yield (transparency) after FSI.
 //
 // For each benchmark channel, the yield is the number of signal mesons of the
@@ -83,7 +85,7 @@ void fsi_yield() {
    h->SetFillColorAlpha(kAzure + 1, 0.55);
    h->SetLineColor(kAzure + 2);
    h->SetLineWidth(2);
-   h->GetXaxis()->SetLabelSize(0.055);
+   h->GetXaxis()->SetLabelSize(0.052);
 
    TCanvas* cv = new TCanvas("c", "FSI yield", 900, 600);
    h->Draw("bar2");

@@ -1,5 +1,7 @@
 #ifndef PDK_FSI_XSEC_H
 #define PDK_FSI_XSEC_H
+// Author: Jarek Nowak <lunar_pdk@proton.me>, 2026
+//
 
 // Hadron-nucleon cross sections for the PDK final-state-interaction cascade
 // (PDKCascade.h).

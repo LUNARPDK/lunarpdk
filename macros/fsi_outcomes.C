@@ -1,3 +1,5 @@
+// Author: Jarek Nowak <lunar_pdk@proton.me>, 2026
+//
 // Final-state-interaction outcome fractions across decay channels.
 //
 // For each benchmark channel the FSI cascade labels every event by the fate of
@@ -124,7 +126,7 @@ void fsi_outcomes() {
    TCanvas* cv = new TCanvas("c", "FSI outcomes", 1300, 620);
    st->Draw("hist bar2");
    st->SetMaximum(1.28);
-   st->GetXaxis()->SetLabelSize(0.036);
+   st->GetXaxis()->SetLabelSize(0.050);
    st->GetYaxis()->SetTitleOffset(0.85);
    st->GetYaxis()->SetRangeUser(0.0, 1.28);
    gPad->SetTopMargin(0.08);

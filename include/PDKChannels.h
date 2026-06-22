@@ -1,5 +1,7 @@
 #ifndef PDK_CHANNELS_H
 #define PDK_CHANNELS_H
+// Author: Jarek Nowak <lunar_pdk@proton.me>, 2026
+//
 
 // Nucleon-decay channels for the PDK generator.
 //

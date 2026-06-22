@@ -1,3 +1,5 @@
+// Author: Jarek Nowak <lunar_pdk@proton.me>, 2026
+//
 // Analyze the lab-frame hadron-daughter momentum distribution (the kaon, for the
 // default p -> K+ nu channel) for every nucleon-momentum model. Reads
 // data/kaon_<model>.txt (columns: event nucleon_p d1_p d2_p e_rem) produced by

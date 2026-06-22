@@ -1,18 +1,30 @@
+// Author: Jarek Nowak <lunar_pdk@proton.me>, 2026
+//
 // Expected number of nucleon-decay events in DUNE, for every channel in the
 // generator, folding in the Monte-Carlo final-state-interaction (FSI) survival
 // and the nuclear-model spread of the signal-containment efficiency.
 //
-//   N = N_nuc * (1 - exp(-T/tau)) * eps ,    eps = eps_det * eps_FSI
+//   N = N_nuc * (1 - exp(-T/tau)) * eps
 //
 // where N_nuc is the number of target protons (proton modes) or neutrons
 // (neutron modes) in the fiducial mass, T the exposure, tau the assumed
 // lifetime, and eps the detection efficiency. We take tau at each channel's
 // CURRENT Super-Kamiokande 90% C.L. lower limit, so N is the MAXIMUM number of
-// events consistent with present data ("discovery-reach" framing). The nuclear
-// model enters as a relative band on N from the spread of the signal-window
-// (containment) efficiency across the ten momentum models (window_summary.txt);
-// the FSI impact is shown both as the eps_FSI factor and as the FSI-off count
-// (eps_FSI = 1).
+// events consistent with present data ("discovery-reach" framing).
+//
+// Efficiency, avoiding a double-count of FSI: the DUNE TDR signal efficiencies
+// for the two documented modes (p->K+ nu, p->e+ pi0) are evaluated on a GENIE
+// sample that ALREADY includes Fermi motion and FSI -- e.g. the p->e+ pi0 number
+// is "limited by inelastic intra-nuclear scattering". For those modes we
+// therefore use eps = eps_det directly (fsi_inclusive = true) and do NOT re-apply
+// our cascade survival eps_FSI. For every other mode, eps_det is an FSI-exclusive
+// reconstruction assumption, so eps = eps_det * eps_FSI applies the cascade
+// survival once. The nuclear model enters as a relative band on N from the spread
+// of the signal-window (containment) efficiency across the ten momentum models
+// (window_summary.txt). N_off is the FSI-unfolded count (= N_cen / eps_FSI): for
+// the factorized modes it is rate*eps_det, and for the FSI-inclusive modes it
+// unfolds eps_FSI from eps_det so the cascade suppression stays visible (rather
+// than being hidden inside eps_det). The gap N_off - N_cen is the FSI effect.
 //
 // Detector assumptions (2 x 10 kt DUNE LAr modules, TDR-nominal exposure):
 //   fiducial = 20 kt, exposure = 20 yr  -> 400 kt.yr.
@@ -38,18 +50,21 @@ constexpr double kFiducialKt = 20.0;        // 2 x 10 kt modules
 constexpr double kExposureYr = 20.0;        // -> 400 kt.yr (TDR nominal)
 
 // Per-channel current 90% C.L. lower limit on tau/B [years] and the detector
-// reconstruction/PID efficiency eps_det. Limits are the PDG-2024-compiled
-// Super-Kamiokande results; eps_det uses the DUNE TDR signal efficiencies for
-// the two documented modes (p->K+ nu ~30%, p->e+ pi0 ~40%) and a flat 0.30
-// assumption elsewhere. A limit of 0 means "no dedicated experimental limit".
+// efficiency eps_det. Limits are the PDG-2024-compiled Super-Kamiokande results.
+// For the two DUNE-documented modes (p->K+ nu ~30%, p->e+ pi0 ~40%) eps_det is
+// the DUNE TDR signal efficiency, which is FSI-inclusive (fsi_inclusive = true,
+// so eps_FSI is not re-applied). Elsewhere eps_det is a flat 0.30 FSI-exclusive
+// reconstruction assumption and the cascade survival eps_FSI is applied.
+// A limit of 0 means "no dedicated experimental limit".
 struct ChannelInput {
    double tau_limit_yr;
    double eps_det;
+   bool fsi_inclusive = false;  // eps_det already includes FSI (DUNE TDR modes)
 };
 const std::map<std::string, ChannelInput> kInputs = {
     // proton modes
-    {"pToKnu", {5.9e33, 0.30}},   // SuperK2014   (DUNE TDR eff ~30%)
-    {"pToEPi0", {2.4e34, 0.40}},  // SuperK2020   (DUNE TDR eff ~40%)
+    {"pToKnu", {5.9e33, 0.30, true}},   // SuperK2014   (DUNE TDR eff ~30%, FSI-incl.)
+    {"pToEPi0", {2.4e34, 0.40, true}},  // SuperK2020   (DUNE TDR eff ~40%, FSI-incl.)
     {"pToMuPi0", {1.6e34, 0.35}}, // SuperK2020
     {"pToNuPip", {3.9e32, 0.30}}, // SuperK2014nupi
     {"pToEEta", {1.4e34, 0.30}},  // SuperK2024eta
@@ -150,10 +165,16 @@ int main() {
          // -expm1(-T/tau) = 1 - exp(-T/tau), accurate for the tiny T/tau here
          // (the naive 1 - exp(...) cancels to 0 in double precision).
          double rate = n_nuc * (-std::expm1(-kExposureYr / ci.tau_limit_yr));
-         n_cen = rate * ci.eps_det * eps_fsi;
+         // DUNE-documented modes: eps_det already includes FSI, so do not
+         // re-apply eps_FSI. Other modes: apply the cascade survival once.
+         n_cen = rate * ci.eps_det * (ci.fsi_inclusive ? 1.0 : eps_fsi);
          n_lo = n_cen * w_lo;
          n_hi = n_cen * w_hi;
-         n_off = rate * ci.eps_det;  // eps_FSI = 1
+         // FSI-off = FSI-unfolded count, uniformly N_cen / eps_FSI. For the
+         // factorized modes this is rate*eps_det; for the FSI-inclusive modes it
+         // unfolds eps_FSI from the DUNE efficiency so the cascade suppression
+         // (which is otherwise embedded in eps_det) remains visible.
+         n_off = (eps_fsi > 0.0) ? n_cen / eps_fsi : n_cen;
       }
       f << c.key << ' ' << pdk::nucleon_name(c.parent) << ' '
         << ci.tau_limit_yr << ' ' << ci.eps_det << ' ' << eps_fsi << ' ' << w_lo

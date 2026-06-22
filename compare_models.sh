@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Author: Jarek Nowak <lunar_pdk@proton.me>, 2026
+#
 #
 # Generate events for every nuclear momentum model and overlay their nucleon
 # momentum distributions.

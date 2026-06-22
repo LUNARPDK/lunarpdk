@@ -1,3 +1,5 @@
+// Author: Jarek Nowak <lunar_pdk@proton.me>, 2026
+//
 // Tabulated spectral function S(p, E) of argon-40 (proton and neutron grids).
 //
 // Directly visualises the input that drives the `benhar` / `ankowski` momentum

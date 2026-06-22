@@ -1,3 +1,5 @@
+// Author: Jarek Nowak <lunar_pdk@proton.me>, 2026
+//
 // FSI on-vs-off meson momentum spectra for the channels NOT shown in
 // fsi_compare.png (which covers K+ and pi0). Three panels:
 //   left   : p -> nubar pi+   (pi+, strongly interacting)
@@ -133,19 +135,19 @@ void fsi_spectra_channels() {
 
    c->cd(1);
    draw_panel("data/fsi_pToNuPip_off.txt", "data/fsi_pToNuPip_on.txt", {211},
-              "p #rightarrow #bar{#nu}#pi^{+}: pion spectrum;"
+              "p #rightarrow #bar{#nu}#pi^{+};"
               "p_{#pi^{+}} [GeV/c];(1/N_{dec}) dN/dp  [(GeV/c)^{-1}]",
               pfree(mPiC), "#pi^{+} FSI in argon");
 
    c->cd(2);
    draw_panel("data/fsi_pToEEta_off.txt", "data/fsi_pToEEta_on.txt", {221},
-              "p #rightarrow e^{+}#eta: eta spectrum;"
+              "p #rightarrow e^{+}#eta;"
               "p_{#eta} [GeV/c];(1/N_{dec}) dN/dp  [(GeV/c)^{-1}]",
               pfree(mEta), "#eta FSI in argon");
 
    c->cd(3);
    draw_panel("data/fsi_pToMuK0_off.txt", "data/fsi_pToMuK0_on.txt", {311, -311},
-              "p #rightarrow #mu^{+}K^{0}: neutral-kaon spectrum;"
+              "p #rightarrow #mu^{+}K^{0};"
               "p_{K^{0}} [GeV/c];(1/N_{dec}) dN/dp  [(GeV/c)^{-1}]",
               pfree(mK0), "K^{0} FSI in argon");
 

@@ -1,7 +1,8 @@
 # Tabulated spectral functions S(p, E)
 
-Grid spectral functions used by the `benhar` / `ankowski` momentum models
-(`--model benhar`, `--model ankowski`), loaded by `include/PDKSpectral.h`.
+Grid spectral functions used by the `benhar` momentum model (`--model benhar`),
+loaded by `include/PDKSpectral.h`. (The `ankowski` model builds its effective
+S(p,E) analytically and does not read these grids.)
 
 | file | nucleon |
 |------|---------|

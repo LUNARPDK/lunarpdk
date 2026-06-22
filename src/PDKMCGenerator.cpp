@@ -1,3 +1,5 @@
+// Author: Jarek Nowak <lunar_pdk@proton.me>, 2026
+//
 // Quick check of the proton Fermi-momentum sampler: loads the PDF from
 // config/params.dat and prints a few sampled momenta.
 //

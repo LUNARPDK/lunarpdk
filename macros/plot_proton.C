@@ -1,3 +1,5 @@
+// Author: Jarek Nowak <lunar_pdk@proton.me>, 2026
+//
 // Plot the initial proton (Fermi) momentum distribution from the generated events.
 // Run in batch from the project root:  root -l -b -q macros/plot_proton.C
 //

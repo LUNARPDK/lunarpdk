@@ -1,5 +1,7 @@
 #ifndef PDK_CONFIG_H
 #define PDK_CONFIG_H
+// Author: Jarek Nowak <lunar_pdk@proton.me>, 2026
+//
 
 // Shared configuration + Fermi-momentum sampling for the PDK Monte Carlo.
 //

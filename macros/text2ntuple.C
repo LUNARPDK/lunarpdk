@@ -1,3 +1,5 @@
+// Author: Jarek Nowak <lunar_pdk@proton.me>, 2026
+//
 // Alternative reader: load the generator's ascii output into a TNtuple.
 // Run from the project root:  root -l -q macros/text2ntuple.C
 #include "Riostream.h"

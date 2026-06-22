@@ -1,3 +1,5 @@
+// Author: Jarek Nowak <lunar_pdk@proton.me>, 2026
+//
 // Read the generator's ascii output into a ROOT TTree.
 // Columns: event nucleon_p d1_p d2_p e_rem (d1 = lepton-side, d2 = hadron-side).
 // Run from the project root:  root -l -q macros/text2tree.C

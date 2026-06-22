@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Author: Jarek Nowak <lunar_pdk@proton.me>, 2026
+#
 #
 # Run the full PDK pipeline: build -> generate events -> fill TTree -> plot.
 #

@@ -1,5 +1,7 @@
 #ifndef PDK_CASCADE_H
 #define PDK_CASCADE_H
+// Author: Jarek Nowak <lunar_pdk@proton.me>, 2026
+//
 
 // Semi-classical intranuclear cascade (final-state interactions) for the PDK
 // generator.
@@ -270,8 +272,14 @@ inline void kaon_cex(int k, int N, int& out_k, int& out_N) {
 
 class Cascade {
 public:
-    Cascade(const NuclearParams& np, std::mt19937& gen, bool apply_potential = false)
-        : np_(np), gen_(gen), apply_pot_(apply_potential) {
+    // Default formation time c*tau_f [fm] (SKAT parametrization). A produced
+    // meson free-streams a formation length L_f = (p/m)*c*tau_f before FSI.
+    static constexpr double kFormationCt = 0.342;
+
+    Cascade(const NuclearParams& np, std::mt19937& gen, bool apply_potential = false,
+            bool formation_zone = false, double formation_ct = kFormationCt)
+        : np_(np), gen_(gen), apply_pot_(apply_potential),
+          fz_on_(formation_zone), fz_ct_(formation_ct) {
         const int steps = 2000;
         for (int i = 0; i <= steps; ++i) {
             double r = np_.r_max * i / steps;
@@ -357,6 +365,16 @@ private:
 
     double rng() { return uni_(gen_); }
 
+    // Lab-frame formation length [fm] for a produced meson: L_f = (p/m)*c*tau_f,
+    // where p/m = beta*gamma dilates the rest-frame formation time c*tau_f to the
+    // lab. Zero when disabled or for nucleons (recoils are struck, not produced).
+    double formation_length(const Particle& p) const {
+        if (!fz_on_ || is_nucleon(p.pdg)) return 0.0;
+        double m = pdg_mass(p.pdg);
+        if (m <= 0.0) return 0.0;
+        return (p.p4.p_mag() / m) * fz_ct_;
+    }
+
     // Total hadron-nucleon cross section [mb] of `p` on a nucleon `Npdg`, target
     // at rest (Fermi motion enters only the interaction kinematics).
     double total_xsec(const Particle& p, int Npdg) const {
@@ -412,6 +430,8 @@ private:
     // i.e. the primary line) records whether it interacted / produced mesons.
     LineResult transport(Particle p, double x, double y, double z,
                          std::vector<Track>& queue, Fate* fate) {
+        const double Lf = formation_length(p);  // 0 if off / non-meson
+        double s_formed = 0.0;                   // path covered since creation [fm]
         for (int step = 0; step < kMaxSteps; ++step) {
             double pm = p.p4.p_mag();
             if (pm <= 0.0) return {true, p};  // at rest: cannot propagate
@@ -422,6 +442,9 @@ private:
                 if (apply_exit_potential(p)) return {true, p};
                 return {false, p};  // trapped by the potential
             }
+
+            // Formation zone: free-stream, no FSI, until the meson is formed.
+            if (s_formed < Lf) { s_formed += kStep; continue; }
 
             double rho = nucleon_density(r, np_);
             if (rho <= 0.0) continue;
@@ -638,6 +661,8 @@ private:
     NuclearParams np_;
     std::mt19937& gen_;
     bool apply_pot_;
+    bool fz_on_ = false;            // formation zone enabled
+    double fz_ct_ = kFormationCt;   // formation time c*tau_f [fm]
     double r2rho_max_ = 0.0;
     std::uniform_real_distribution<double> uni_{0.0, 1.0};
 };

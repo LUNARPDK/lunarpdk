@@ -1,5 +1,7 @@
 #ifndef PDK_STYLE_H
 #define PDK_STYLE_H
+// Author: Jarek Nowak <lunar_pdk@proton.me>, 2026
+//
 //
 // Shared plotting style for all PDK macros. Including this header and calling
 // pdk_set_style() once at the top of a macro gives every figure the same fonts,
@@ -41,9 +43,9 @@ inline void pdk_set_style() {
    s->SetLegendFont(font);
    s->SetStatFont(font);
 
-   s->SetTitleSize(0.045, "xyz");
-   s->SetLabelSize(0.040, "xyz");
-   s->SetTitleSize(0.050, "");  // pad title
+   s->SetTitleSize(0.050, "xyz");
+   s->SetLabelSize(0.045, "xyz");
+   s->SetTitleSize(0.052, "");  // pad title
    s->SetTitleOffset(1.20, "x");
    s->SetTitleOffset(1.35, "y");
 
@@ -126,16 +128,19 @@ inline void pdk_style_hist(TH1* h, Color_t col) {
 }
 
 // ---- a consistent corner tag drawn on every figure -------------------------
-inline void pdk_label(const char* extra = "") {
+// The short brand tag sits in the bottom-right margin, below the frame and clear
+// of the (centred) axis title. The optional `extra` context is intentionally not
+// drawn: it made the tag long enough to collide with axis titles on narrow
+// multi-panel pads, and it duplicates information already in the title/caption.
+inline void pdk_label(const char* /*extra*/ = "") {
    TLatex* t = new TLatex();
    t->SetNDC();
    t->SetTextFont(42);
-   t->SetTextSize(0.030);
+   t->SetTextSize(0.024);
    t->SetTextColor(kGray + 2);
-   t->SetTextAlign(31);  // bottom-right
-   TString s = "#bf{LUNAR} toy MC";
-   if (extra && extra[0]) s += TString::Format("  #bullet  %s", extra);
-   t->DrawLatex(0.95, 0.16, s);
+   t->SetTextAlign(33);  // right-top: tucked into the extreme top-right corner,
+                         // clear of the (centred) title and all in-frame content
+   t->DrawLatex(0.985, 0.988, "#bf{LUNAR} PDK MC");
 }
 
 #endif  // PDK_STYLE_H

@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Author: Jarek Nowak <lunar_pdk@proton.me>, 2026
+#
 #
 # Generate events for every proton-momentum model and analyze the resulting
 # lab-frame kaon momentum distribution. The K+ momentum is the experimentally

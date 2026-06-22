@@ -1,3 +1,5 @@
+// Author: Jarek Nowak <lunar_pdk@proton.me>, 2026
+//
 // Compare the lab-frame kaon momentum spectrum across the three binding
 // (removal-energy) models, for two representative nucleon-momentum models.
 // Reads data/kbind_<model>_<binding>.txt (columns: event nucleon_p d1_p d2_p e_rem).

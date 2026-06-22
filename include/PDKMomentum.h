@@ -1,5 +1,7 @@
 #ifndef PDK_MOMENTUM_H
 #define PDK_MOMENTUM_H
+// Author: Jarek Nowak <lunar_pdk@proton.me>, 2026
+//
 
 // Initial-state proton momentum models for the PDK generator.
 //
@@ -28,12 +30,19 @@
 //   CorrelatedFermiGas Sharp Fermi sphere bulk + a 1/p^4 contact tail to ~2 k_F
 //                    with an explicit correlated fraction (modern CFG).
 //   Benhar           Tabulated spectral function S(p,E) read from a NuWro grid
-//   Ankowski         file (see PDKSpectral.h). Both keys draw the joint
-//                    (momentum, removal-energy) directly from real argon data
-//                    (JLab E12-14-012, proton and neutron); the table supersedes
-//                    the analytic momentum sampling AND the binding model, so the
-//                    BindingModel below does NOT apply to them. Supply the grid
-//                    with --sf-file (defaults to config/sf/gsf_Ar40{P,N}.grid).
+//                    file (see PDKSpectral.h): draws the joint (momentum,
+//                    removal-energy) directly from real argon data (JLab
+//                    E12-14-012, proton and neutron). Supply the grid with
+//                    --sf-file (defaults to config/sf/gsf_Ar40{P,N}.grid).
+//   Ankowski         Effective Ankowski-Sobczyk spectral function built
+//                    analytically (no grid): a shell mean field (harmonic-
+//                    oscillator momentum profile paired with each shell's
+//                    separation energy) plus a correlated 1/p^4 tail carrying
+//                    the two-nucleon removal energy.
+//
+// For both benhar and ankowski the spectral function supersedes the analytic
+// momentum sampling AND the binding model, so the BindingModel below does NOT
+// apply to them (their removal energy is intrinsic to S(p,E)).
 //
 // The removal (separation) energy of a *mean-field* proton (analytic models
 // only) is set by a separate, independently selectable BindingModel (see below):
@@ -121,6 +130,11 @@ struct NuclearParams {
     // Correlated Fermi gas: correlated (contact-tail) fraction. The 1/p^4 tail
     // runs from k_F up to 2 k_F (derived from the global Fermi momentum).
     double cfg_fraction = 0.20;
+
+    // Ankowski-Sobczyk effective spectral function: fraction of nucleons in the
+    // correlated (1/p^4 tail, two-nucleon removal energy) part; the rest form the
+    // shell mean field.
+    double as_corr_fraction = 0.20;
 
     // SRC pairs are not described by the mean-field potential; their removal
     // energy comes from the recoiling partner, E ~ offset + p^2 / 2M_p.
@@ -225,7 +239,7 @@ inline const char* model_name(MomentumModel m) {
         case MomentumModel::Gaussian: return "Gaussian";
         case MomentumModel::CorrelatedFermiGas: return "correlated Fermi gas";
         case MomentumModel::Benhar: return "tabulated spectral function (benhar)";
-        case MomentumModel::Ankowski: return "tabulated spectral function (ankowski)";
+        case MomentumModel::Ankowski: return "analytic spectral function (ankowski)";
     }
     return "unknown";
 }
@@ -291,10 +305,10 @@ public:
           np_(np) {
         m_nucleon_ = nucleon_mass(nucleon_);
 
-        // Tabulated spectral-function models read their joint (p, E) from a grid
+        // The tabulated benhar model reads its joint (p, E) from a NuWro grid
         // file; the table supersedes the analytic momentum/binding treatment.
-        if (model_ == MomentumModel::Benhar ||
-            model_ == MomentumModel::Ankowski) {
+        // (ankowski builds its S(p,E) analytically and needs no grid.)
+        if (model_ == MomentumModel::Benhar) {
             SpectralTable table;
             if (sf_path.empty() || !load_nuwro_grid(sf_path, table)) {
                 std::cerr << "Error: model '" << model_name(model_)
@@ -397,13 +411,26 @@ public:
                     double p = sample_fermi_sphere(k_fermi_, gen);
                     return {p, mean_field_removal(k_fermi_, p, gen)};
                 }
-            case MomentumModel::Benhar:
-            case MomentumModel::Ankowski: {
+            case MomentumModel::Benhar: {
                 // Tabulated spectral function: draw (p, E_rem) jointly from the
                 // loaded NuWro grid (no separate SRC tail or binding model).
                 double p, e_rem;
                 spectral_.sample(gen, p, e_rem);
                 return {p, e_rem};
+            }
+            case MomentumModel::Ankowski: {
+                // Effective (Ankowski-Sobczyk) S(p,E) built analytically: a
+                // correlated 1/p^4 tail with two-nucleon removal energy, plus a
+                // shell mean field (HO momentum profile paired with the shell's
+                // separation energy). The shell energies are intrinsic, so the
+                // --binding choice does not apply (as for benhar).
+                if (draw_frac(gen, np_.as_corr_fraction)) {
+                    double p = sample_tail(k_fermi_, gen);
+                    return {p, src_removal(p)};
+                }
+                int shell = pick_shell(gen);
+                double p = sample_ho_shell(shell, gen);
+                return {p, sample_shell_energy(gen, shell)};
             }
         }
         return {0.0, 0.0};

@@ -1,7 +1,8 @@
-# LUNAR PDK Monte Carlo
+# DUNE PDK Monte Carlo
 
-Toy Monte Carlo for **bound-nucleon decay** (proton and neutron) in a multi-ton liquid-argon detector. 
-The default channel is **p → K⁺ν̄**; a range of SUSY/GUT two-body modes is supported (see [Decay channels](#decay-channels)).
+Toy Monte Carlo for **bound-nucleon decay** (proton and neutron) in a DUNE 10 kt
+liquid-argon module. The default channel is **p → K⁺ν̄**; a range of SUSY/GUT
+two-body modes is supported (see [Decay channels](#decay-channels)).
 
 ## Layout
 
@@ -11,7 +12,7 @@ include/   Shared headers
   PDKConfig.h      Config struct, params.dat loader, polynomial sampler, RNG
   PDKKinematics.h  Off-shell two-body decay N -> d1 + d2 + Lorentz boost
   PDKMomentum.h    Nucleon momentum models (Fermi gas, LFG, SRC, spectral fn.)
-  PDKSpectral.h    Tabulated S(p,E) loader + 2D sampler (benhar/ankowski)
+  PDKSpectral.h    Tabulated S(p,E) loader + 2D sampler (benhar)
   PDKFsiXsec.h     Hadron-nucleon cross sections (Metropolis piN/NN + K/eta)
   PDKCascade.h     Intranuclear FSI cascade for the final-state hadrons
 src/       Programs
@@ -20,7 +21,8 @@ src/       Programs
   LunarPDKGenerator.cpp  Full event generator (writes the ascii table)
 macros/    ROOT macros: load the ascii output into a TTree/TNtuple, and plot
   pdk_style.h      Shared plot style + model/binding colour palette (all macros)
-  plot_spectral.C  S(p,E) heatmap of the proton/neutron NuWro grids
+  plot_spectral.C  S(p,E) heatmap of the proton/neutron NuWro grids (benhar)
+  plot_ankowski_sf.C  S(p,E) heatmap of the analytic Ankowski effective SF
   plot_xsec.C      Hadron-nucleon FSI cross sections (includes PDKFsiXsec.h)
   fsi_multiplicity.C  Mean post-FSI final-state multiplicity per channel
   offshell_W.C     Off-shell mass W + kinematically-forbidden fraction by model
@@ -28,12 +30,14 @@ config/    params.dat — Fermi-momentum PDF (polynomial coeffs + range + f_max)
   fsi/             NuWro Metropolis NN cross-section tables (provenance only)
 data/      Generator output (output.txt) and ROOT files (output.root)
 plots/     Generated figures (proton_p.png, kaon_p.png, proton_models.png,
-           spectral_pe.png, fsi_xsec.png, fsi_multiplicity.png, offshell_W.png)
+           spectral_pe.png, ankowski_sf.png, fsi_xsec.png, fsi_multiplicity.png,
+           offshell_W.png)
 build/     Compiled binaries
 run.sh            One-command pipeline driver (single model)
 compare_models.sh Overlay nucleon momentum across all nuclear models
 analyze_kaon.sh   Daughter spectrum across all models (+ summary table)
 compare_fsi.sh    Overlay the meson spectrum with vs. without FSI (kaon + pion)
+compare_fz.sh     Primary-meson outcome with the formation zone off vs. on
 make_plots.sh     Rebuild every figure in plots/ with the shared styling
 ```
 
@@ -77,7 +81,7 @@ low-momentum tail fraction (p_K < 0.25 GeV/c) fed by deep binding and SRC pairs.
 
 To isolate the **binding-model** dependence of the kaon spectrum (potential vs.
 constant vs. shell), for two analytic momentum models (`lfg`, `sf`) — binding
-does not apply to the tabulated `benhar`/`ankowski` models:
+does not apply to the spectral-function models `benhar`/`ankowski`:
 
 ```sh
 for b in potential constant shell; do for m in lfg sf; do
@@ -108,15 +112,21 @@ argon-40 (k_F ≈ 0.217 GeV/c protons, ≈ 0.230 GeV/c neutrons), defined in
 | `src`        | Fermi-gas bulk + a 1/p⁴ short-range-correlation tail above k_F |
 | `sf`         | toy spectral function: local-Fermi-gas bulk + SRC tail (parametrized) |
 | `benhar`     | **tabulated** S(p,E) from a NuWro grid file (default: real JLab argon SF) — draws (p, E_rem) jointly from the data |
-| `ankowski`   | **tabulated** S(p,E) — same loader; override the grid with `--sf-file` to use a different prescription |
+| `ankowski`   | **analytic** effective Ankowski-Sobczyk S(p,E): shell mean field (HO momentum + shell separation energy) + a correlated 1/p⁴ tail |
 
-The `benhar` and `ankowski` models read a real tabulated spectral function
-S(p, E) (`include/PDKSpectral.h`) instead of a parametrization. The grid file is
-chosen by parent nucleon — `config/sf/gsf_Ar40P.grid` (proton) or
-`gsf_Ar40N.grid` (neutron) — or set explicitly with `--sf-file PATH`. Because the
-table already encodes the full momentum **and** removal-energy distribution,
-`--binding` does **not** apply to these two models. See `config/sf/README.md` for
+The `benhar` model reads a real tabulated spectral function S(p, E)
+(`include/PDKSpectral.h`) instead of a parametrization. The grid file is chosen by
+parent nucleon — `config/sf/gsf_Ar40P.grid` (proton) or `gsf_Ar40N.grid`
+(neutron) — or set explicitly with `--sf-file PATH`. See `config/sf/README.md` for
 the data source (NuWro / JLab E12-14-012) and the grid format.
+
+The `ankowski` model builds an effective spectral function analytically (no grid):
+each shell contributes its harmonic-oscillator momentum profile paired with its
+measured separation energy, and a correlated fraction (`as_corr_fraction`) carries
+a 1/p⁴ tail with the two-nucleon removal energy E ≈ E_offset + p²/2M.
+
+Because both spectral-function models already encode the full momentum **and**
+removal-energy distribution, `--binding` does **not** apply to either of them.
 
 ## Binding-energy (removal-energy) options
 
@@ -130,9 +140,10 @@ the two-nucleon removal energy E ≈ E_offset + p²/2M regardless of this choice
 | `constant`  | fixed average separation energy (`e_sep_const`, 30 MeV by default) |
 | `shell`     | argon-40 nucleon shell levels, Gaussian-smeared about their separation energies (`argon_proton_shells()` / `argon_neutron_shells()`) |
 
-The binding model applies to every momentum model, e.g.
+The binding model applies to every analytic momentum model (all except `benhar`
+and `ankowski`, which carry their own removal energy), e.g.
 `./run.sh 10000 1 lfg shell` or
-`./build/LunarPDKGenerator --model ankowski --binding constant`.
+`./build/LunarPDKGenerator --model gfg --binding constant`.
 
 ## Decay channels
 
@@ -172,6 +183,8 @@ turn it off with `--fsi off` (which restores the legacy momentum-only columns).
 |--------------|---------|
 | `--fsi on\|off` | run (default) or skip the hadron FSI cascade |
 | `--fsi-pot`     | apply a constant nucleon exit potential (~40 MeV) at the surface |
+| `--formation-zone` | free-stream each produced meson one formation length before FSI is enabled |
+| `--formation-time T` | formation time c·τ_f in fm (default 0.342; only with `--formation-zone`) |
 | `--decay-mesons`| decay the escaped unstable mesons (π⁰/η → γγ, K⁰ → K_S/K_L, K_S → ππ); FSI-on only |
 
 **Model** (`include/PDKCascade.h`, following NuWro's `kaskada`): the decay vertex
@@ -193,6 +206,16 @@ Friedman & Gal 2007; PDG), and the η (through the N\*(1535)) is an N\*(1535)
 Breit–Wigner. A neutral kaon is treated as a 50/50 incoherent K⁰/K̄⁰ mix.
 Quasi-elastic and charge-exchange scattering is forward-peaked (`dσ/dt ∝ exp(B·t)`),
 reducing to isotropic at threshold.
+
+**Formation zone** (`--formation-zone`, off by default): a freshly produced
+hadron is not yet a fully formed colour singlet and cannot re-interact at full
+cross section immediately. With the flag on, each produced meson free-streams a
+formation length `L_f = (p/m)·c·τ_f` before FSI is enabled, where `p/m = βγ`
+dilates the rest-frame formation time `c·τ_f` (default 0.342 fm, SKAT;
+`--formation-time` overrides) to the lab frame. The suppression applies to the
+primary meson and to mesons made in inelastic production; struck recoil nucleons
+are unaffected. The effect raises the escape (`none`) fraction — modestly for the
+slow, nearly-transparent K⁺, strongly for the heavily-absorbed π⁰.
 
 Each event is labelled by the **fate of the primary meson**: `none` (escaped
 untouched), `elastic`, `cex` (left as a different meson), `produced` (survived but
@@ -288,13 +311,16 @@ absorption removes the meson, knockout/production add nucleons and pions.
   Fermi, Eq. (4) of the same paper) and local Fermi momentum (Eq. (5)) feed both
   the local-density sampling and the binding potential. The `sf` model is a
   Fermi-gas + 1/p⁴ SRC-tail stand-in.
-- The `benhar` and `ankowski` models are **not** parametrized: they sample
-  (p, E_rem) jointly from a real tabulated spectral function S(p, E) read from a
-  NuWro grid file (`config/sf/gsf_Ar40{P,N}.grid`, the JLab E12-14-012 argon SF),
-  so the removal-energy spectrum shows the measured shell structure plus a
-  correlated tail. The grid is overridable with `--sf-file`; the public argon
-  data is a single prescription, so `benhar` and `ankowski` use the same grid by
-  default (use `--sf-file` to feed a distinct table to either).
+- The `benhar` model is **not** parametrized: it samples (p, E_rem) jointly from a
+  real tabulated spectral function S(p, E) read from a NuWro grid file
+  (`config/sf/gsf_Ar40{P,N}.grid`, the JLab E12-14-012 argon SF), overridable with
+  `--sf-file`.
+- The `ankowski` model is an **effective** spectral function built analytically
+  (no grid): each argon shell contributes its harmonic-oscillator momentum profile
+  paired with its measured separation energy, and a correlated fraction
+  (`as_corr_fraction`) adds a 1/p⁴ tail with the two-nucleon removal energy. So its
+  removal-energy spectrum shows the shell structure plus a correlated tail in the
+  Ankowski-Sobczyk spirit, distinct from the `benhar` grid.
 - The `shell` binding levels live in `argon_proton_shells()` /
   `argon_neutron_shells()` in `include/PDKMomentum.h`; their separation energies
   are representative Ar-40 values, not a fit.

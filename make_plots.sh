@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Author: Jarek Nowak <lunar_pdk@proton.me>, 2026
+#
 #
 # Rebuild every figure in plots/ from scratch with the shared styling
 # (macros/pdk_style.h). Regenerates all the data each plot needs, then runs each
@@ -108,6 +110,7 @@ root -l -b -q macros/fsi_yield.C
 root -l -b -q macros/fsi_multiplicity.C
 root -l -b -q macros/window_eff.C
 root -l -b -q macros/plot_spectral.C
+root -l -b -q macros/plot_ankowski_sf.C
 root -l -b -q macros/plot_xsec.C
 root -l -b -q macros/offshell_W.C
 

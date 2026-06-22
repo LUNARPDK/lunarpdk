@@ -1,3 +1,5 @@
+// Author: Jarek Nowak <lunar_pdk@proton.me>, 2026
+//
 // Final-state multiplicity after the FSI cascade.
 //
 // The cascade knocks nucleons out of the residual nucleus and can produce or
@@ -146,13 +148,14 @@ void fsi_multiplicity() {
    cv->Divide(2, 1);
 
    cv->cd(1);
-   gPad->SetBottomMargin(0.14);
+   gPad->SetBottomMargin(0.24);
    THStack* st = new THStack("st",
                              "Mean post-FSI final-state multiplicity by channel;;"
                              "mean particles per decay");
    for (int s = 0; s < kNspec; ++s) st->Add(h[s]);
    st->Draw("hist bar2");
-   st->GetXaxis()->SetLabelSize(0.034);
+   st->GetXaxis()->SetLabelSize(0.048);
+   st->GetXaxis()->LabelsOption("v");  // rotate the 14 channel names vertical
    st->GetYaxis()->SetTitleOffset(0.95);
    TLegend* leg = new TLegend(0.15, 0.70, 0.55, 0.90);
    leg->SetNColumns(2);
@@ -161,7 +164,7 @@ void fsi_multiplicity() {
    leg->Draw();
 
    cv->cd(2);
-   hk_pi->SetTitle("Knocked-out nucleon multiplicity;N_{p}+N_{n} escaping;"
+   hk_pi->SetTitle("Knocked-out nucleons;N_{p}+N_{n} escaping;"
                    "fraction of decays");
    if (hk_kp->Integral() > 0) hk_kp->Scale(1.0 / hk_kp->Integral());
    if (hk_pi->Integral() > 0) hk_pi->Scale(1.0 / hk_pi->Integral());

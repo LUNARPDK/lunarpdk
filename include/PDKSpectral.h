@@ -1,5 +1,7 @@
 #ifndef PDK_SPECTRAL_H
 #define PDK_SPECTRAL_H
+// Author: Jarek Nowak <lunar_pdk@proton.me>, 2026
+//
 
 // Tabulated nuclear spectral function S(p, E) for the PDK generator.
 //

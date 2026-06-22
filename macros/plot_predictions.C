@@ -1,3 +1,5 @@
+// Author: Jarek Nowak <lunar_pdk@proton.me>, 2026
+//
 // Predicted number of nucleon-decay events in DUNE per channel.
 //
 // Reads report/event_predictions.txt (written by build/EventPredictor) and draws,
@@ -5,8 +7,11 @@
 // count in 400 kt.yr at tau = the SuperK 90% C.L. limit:
 //   * filled marker + horizontal error bar = central count with the nuclear-model
 //     band (spread of the signal-window efficiency across the ten models);
-//   * open marker = the same prediction with FSI switched off (eps_FSI = 1), so
-//     the gap between the two shows the FSI suppression of each channel.
+//   * open marker = the FSI-unfolded count (N_cen / eps_FSI), so the gap between
+//     the two shows the cascade's suppression. For the two DUNE-documented modes
+//     (p->K+ nu, p->e+ pi0) the published DUNE efficiency already includes FSI;
+//     unfolding eps_FSI keeps that suppression visible (e.g. the p->e+ pi0 gap),
+//     rather than hiding it inside eps_det.
 // A dashed line at N = 1 marks the one-event threshold. Log-x, since the counts
 // span several orders of magnitude.
 //
@@ -87,7 +92,7 @@ void plot_predictions() {
                        100, xmin, xmax, n, 0, n);
    for (int i = 0; i < n; ++i)
       fr->GetYaxis()->SetBinLabel(n - i, chan_label(keys[i]));  // first row on top
-   fr->GetYaxis()->SetLabelSize(0.034);
+   fr->GetYaxis()->SetLabelSize(0.044);
    fr->GetXaxis()->SetTitleOffset(1.10);
    fr->SetStats(0);
 
@@ -127,7 +132,7 @@ void plot_predictions() {
 
    TLegend* leg = new TLegend(0.58, 0.78, 0.93, 0.90);
    leg->AddEntry(g_on, "FSI on (band = nucl. models)", "pl");
-   leg->AddEntry(g_off, "FSI off", "p");
+   leg->AddEntry(g_off, "cascade off", "p");
    leg->AddEntry(one, "1 event", "l");
    leg->Draw();
 

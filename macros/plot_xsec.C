@@ -1,3 +1,5 @@
+// Author: Jarek Nowak <lunar_pdk@proton.me>, 2026
+//
 // Hadron-nucleon cross sections used by the FSI cascade.
 //
 // This macro includes the generator's own cross-section header
@@ -22,6 +24,18 @@ static TGraph* mkgraph(int n, Color_t col, int style = 1) {
    return g;
 }
 
+// Enlarge the axis fonts on a pad of the 2x2 grid: each pad is only half the
+// canvas height, so the global label/title sizes render small once the figure is
+// scaled to the column/text width. Call on the lead graph after Draw("AL").
+static void bump_axes(TGraph* g) {
+   for (TAxis* a : {g->GetXaxis(), g->GetYaxis()}) {
+      a->SetLabelSize(0.055);
+      a->SetTitleSize(0.060);
+   }
+   g->GetXaxis()->SetTitleOffset(1.00);
+   g->GetYaxis()->SetTitleOffset(1.05);
+}
+
 void plot_xsec() {
    pdk_set_style();
    const int N = 240;
@@ -44,6 +58,7 @@ void plot_xsec() {
    g_pip_p->SetMaximum(220);
    g_pip_p->SetMinimum(0);
    g_pip_p->Draw("AL");
+   bump_axes(g_pip_p);
    g_pip_n->Draw("L SAME");
    g_pi0_p->Draw("L SAME");
    TLegend* l1 = new TLegend(0.55, 0.68, 0.92, 0.90);
@@ -71,6 +86,7 @@ void plot_xsec() {
    g_pp->SetMaximum(55);
    g_pp->SetMinimum(0);
    g_pp->Draw("AL");
+   bump_axes(g_pp);
    g_pn->Draw("L SAME");
    g_pp_in->Draw("L SAME");
    g_pn_in->Draw("L SAME");
@@ -98,6 +114,7 @@ void plot_xsec() {
    g_Kmp->SetMaximum(105);
    g_Kmp->SetMinimum(0);
    g_Kmp->Draw("AL");
+   bump_axes(g_Kmp);
    g_Kmn->Draw("L SAME");
    g_Kpp->Draw("L SAME");
    g_Kpn->Draw("L SAME");
@@ -118,6 +135,7 @@ void plot_xsec() {
    g_eta->SetTitle(";p_{#eta} [GeV/c];#sigma_{#eta N} [mb]");
    g_eta->SetMinimum(0);
    g_eta->Draw("AL");
+   bump_axes(g_eta);
    TLegend* l4 = new TLegend(0.45, 0.74, 0.92, 0.90);
    l4->AddEntry(g_eta, "#eta N  (N*(1535) Breit-Wigner)", "l");
    l4->Draw();

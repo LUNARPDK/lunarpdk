@@ -1,5 +1,7 @@
 #ifndef PDK_KINEMATICS_H
 #define PDK_KINEMATICS_H
+// Author: Jarek Nowak <lunar_pdk@proton.me>, 2026
+//
 
 // Relativistic kinematics for the two-body decay N -> d1 + d2 of a bound nucleon
 // carrying Fermi momentum inside the nucleus. The nucleon and daughter rest

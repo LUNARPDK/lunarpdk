@@ -1,3 +1,5 @@
+// Author: Jarek Nowak <lunar_pdk@proton.me>, 2026
+//
 // Compare the removal-energy distribution of the tabulated argon spectral
 // function for the proton vs the neutron grid (gsf_Ar40P.grid / gsf_Ar40N.grid).
 // Reads data/erem_sf_proton.txt and data/erem_sf_neutron.txt

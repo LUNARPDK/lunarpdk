@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Author: Jarek Nowak <lunar_pdk@proton.me>, 2026
+#
 #
 # Compare the lab-frame meson momentum spectrum with and without final-state
 # interactions (FSI), for the two benchmark channels:

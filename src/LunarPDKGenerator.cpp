@@ -1,3 +1,5 @@
+// Author: Jarek Nowak <lunar_pdk@proton.me>, 2026
+//
 // Generates bound-nucleon decay events N -> d1 + d2: samples the initial nucleon
 // momentum from the chosen nuclear model, performs the off-shell two-body decay
 // for the selected channel, and boosts the daughters to the lab.
@@ -61,10 +63,12 @@ void print_help(const char* prog) {
         << "                  hosm|br|gauss|cfg|benhar|ankowski\n"
         << "  --binding NAME  removal-energy model: potential|constant|shell\n"
         << "                  (ignored for benhar/ankowski; the table sets E)\n"
-        << "  --sf-file PATH  spectral-function grid for benhar/ankowski\n"
+        << "  --sf-file PATH  spectral-function grid for benhar\n"
         << "                  (default config/sf/gsf_Ar40{P,N}.grid by nucleon)\n"
         << "  --fsi on|off    final-state interactions of the hadron (default on)\n"
         << "  --fsi-pot       apply a nucleon exit potential in the FSI cascade\n"
+        << "  --formation-zone   free-stream produced mesons one formation length before FSI\n"
+        << "  --formation-time T  formation time c*tau_f in fm (default 0.342; needs --formation-zone)\n"
         << "  --decay-mesons  decay escaped pi0/eta/K0 (-> gamma, K_S/K_L, pi); FSI-on only\n"
         << "  --seed S        RNG seed (default: non-deterministic)\n"
         << "  --config PATH   polynomial-model params file (default config/params.dat)\n"
@@ -102,6 +106,8 @@ int main(int argc, char* argv[]) {
     bool fsi_on = true;      // run the FSI cascade on the hadron daughter
     bool fsi_pot = false;    // apply the nucleon exit potential in the cascade
     bool decay_mesons = false;  // decay escaped pi0/eta/K0 secondaries
+    bool fz_on = false;      // formation zone: free-stream produced mesons before FSI
+    double fz_ct = pdk::Cascade::kFormationCt;  // formation time c*tau_f [fm]
 
     for (int i = 1; i < argc; ++i) {
         std::string arg = argv[i], val;
@@ -157,6 +163,15 @@ int main(int argc, char* argv[]) {
                 }
             } else if (arg == "--fsi-pot") {
                 fsi_pot = true;
+            } else if (arg == "--formation-zone") {
+                fz_on = true;
+            } else if (arg == "--formation-time") {
+                if (!take_value(argc, argv, i, val)) return 1;
+                fz_ct = std::stod(val);  // c*tau_f in fm
+                if (fz_ct < 0.0) {
+                    std::cerr << "Error: --formation-time must be >= 0.\n";
+                    return 1;
+                }
             } else if (arg == "--decay-mesons") {
                 decay_mesons = true;
             } else {
@@ -171,11 +186,14 @@ int main(int argc, char* argv[]) {
     }
 
     const double m_nucleon = pdk::nucleon_mass(channel.parent);
-    const bool tabulated = model == pdk::MomentumModel::Benhar ||
-                           model == pdk::MomentumModel::Ankowski;
+    // Both spectral-function models supply their own (p, E) and ignore --binding;
+    // only benhar reads a NuWro grid (ankowski builds S(p,E) analytically).
+    const bool spectral = model == pdk::MomentumModel::Benhar ||
+                          model == pdk::MomentumModel::Ankowski;
+    const bool needs_grid = model == pdk::MomentumModel::Benhar;
 
-    // Default the spectral-function grid by parent nucleon for tabulated models.
-    if (tabulated && sf_path.empty()) {
+    // Default the spectral-function grid by parent nucleon for the benhar model.
+    if (needs_grid && sf_path.empty()) {
         sf_path = channel.parent == pdk::Nucleon::Proton
                       ? "config/sf/gsf_Ar40P.grid"
                       : "config/sf/gsf_Ar40N.grid";
@@ -190,17 +208,20 @@ int main(int argc, char* argv[]) {
     std::cerr << "Channel: " << channel.pretty << " | parent: "
               << pdk::nucleon_name(channel.parent) << " | model: "
               << pdk::model_name(model);
-    if (tabulated)
+    if (needs_grid)
         std::cerr << " | sf-file: " << sf_path << " (binding ignored)";
+    else if (spectral)
+        std::cerr << " | analytic spectral function (binding ignored)";
     else
         std::cerr << " | binding: " << pdk::binding_name(binding);
     std::cerr << " | FSI: " << (fsi_on ? "on" : "off");
     if (fsi_on && fsi_pot) std::cerr << " (+exit potential)";
+    if (fsi_on && fz_on) std::cerr << " (+formation zone ctau=" << fz_ct << " fm)";
     if (fsi_on && decay_mesons) std::cerr << " (+meson decays)";
     std::cerr << "\n";
 
     // FSI cascade and the channel's hadron / lepton PDG codes.
-    pdk::Cascade cascade(np, gen, fsi_pot);
+    pdk::Cascade cascade(np, gen, fsi_pot, fz_on, fz_ct);
     const int hpdg = hadron_pdg(channel.lab2);
     const int lpdg = lepton_pdg(channel.lab1);
     if (fsi_on) {

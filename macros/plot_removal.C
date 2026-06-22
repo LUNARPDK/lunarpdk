@@ -1,3 +1,5 @@
+// Author: Jarek Nowak <lunar_pdk@proton.me>, 2026
+//
 // Plot the proton removal (separation) energy distribution.
 // Run in batch from the project root:  root -l -b -q macros/plot_removal.C
 //

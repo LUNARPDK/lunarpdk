@@ -1,3 +1,5 @@
+// Author: Jarek Nowak <lunar_pdk@proton.me>, 2026
+//
 // Overlay the nucleon momentum distribution for the different nuclear models.
 // Expects one ascii file per model at data/proton_<model>.txt (produced by
 // compare_models.sh), each with columns: event nucleon_p d1_p d2_p e_rem.
@@ -19,7 +21,8 @@ void plot_models() {
    TCanvas *c = new TCanvas("c", "proton momentum models", 800, 600);
    c->SetLogy();
 
-   TLegend *leg = new TLegend(0.58, 0.50, 0.93, 0.90);
+//   TLegend *leg = new TLegend(0.58, 0.50, 0.93, 0.90);
+   TLegend *leg = new TLegend(0.68, 0.50, 0.95, 0.90);
 
    FILE* rep = fopen("report/momentum_summary.txt", "w");
    auto emit = [&](TString s) {
@@ -46,7 +49,7 @@ void plot_models() {
       TH1F *h = new TH1F(TString::Format("h_%s", models[i]),
                          "Nucleon momentum by nuclear model;"
                          "Nucleon momentum p_{N} [GeV/c];Probability density",
-                         100, 0.0, 0.8);
+                         100, 0.0, 0.85);
       int event; float np, d1, d2, er;
       long n = 0, above = 0;
       while (in >> event >> np >> d1 >> d2 >> er) {

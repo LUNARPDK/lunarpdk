@@ -1,3 +1,5 @@
+// Author: Jarek Nowak <lunar_pdk@proton.me>, 2026
+//
 // Signal-window (containment) efficiency per channel and nuclear model.
 //
 // For each decay channel the observable hadron-meson momentum peaks at the
@@ -136,7 +138,8 @@ void window_eff() {
    frame->SetMaximum(0.75);
    for (int c = 0; c < nchan; ++c)
       frame->GetXaxis()->SetBinLabel(c + 1, chans[c].label);
-   frame->GetXaxis()->SetLabelSize(0.030);
+   frame->GetXaxis()->SetLabelSize(0.048);
+   frame->GetXaxis()->LabelsOption("v");  // rotate the 14 channel names vertical
    frame->GetYaxis()->SetTitleOffset(0.90);
 
    TGraphAsymmErrors* g = new TGraphAsymmErrors(nchan);
@@ -151,7 +154,7 @@ void window_eff() {
    g->SetLineWidth(2);
 
    TCanvas* cv = new TCanvas("c", "window efficiency", 1300, 600);
-   gPad->SetBottomMargin(0.16);
+   gPad->SetBottomMargin(0.26);
    frame->Draw("AXIS");
    g->Draw("P SAME");
    pdk_label("FSI off  #bullet  band = 10 nuclear models");

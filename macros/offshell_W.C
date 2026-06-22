@@ -1,3 +1,5 @@
+// Author: Jarek Nowak <lunar_pdk@proton.me>, 2026
+//
 // Off-shell invariant mass W of the decaying nucleon and the kinematically
 // forbidden fraction, across nuclear models.
 //

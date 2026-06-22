@@ -1,5 +1,7 @@
 #ifndef PDK_DECAY_H
 #define PDK_DECAY_H
+// Author: Jarek Nowak <lunar_pdk@proton.me>, 2026
+//
 
 // Optional secondary decays of the escaped unstable mesons, applied AFTER the
 // FSI cascade and gated by the --decay-mesons flag. This is a spectrum-level
