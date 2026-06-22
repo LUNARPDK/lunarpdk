@@ -44,3 +44,9 @@ Thumbs.db
 *.root
 *.png
 build/PDKMCGenerator
+report/forbidden_log.txt
+.gitignore
+report/kaon_binding_summary.txt
+report/kaon_summary.txt
+report/momentum_summary.txt
+report/fsi_summary.txt

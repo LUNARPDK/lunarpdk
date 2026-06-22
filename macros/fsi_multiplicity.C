@@ -27,44 +27,44 @@ struct Chan {
 };
 
 // Species bins for the stacked bar (order = bottom -> top).
-enum { kProt, kNeut, kPiC, kPi0, kKaon, kNspec };
-static const char* kSpecLabel[kNspec] = {"protons", "neutrons", "#pi^{#pm}",
+enum { kSpProt, kSpNeut, kSpPiC, kSpPi0, kSpKaon, kSpN };
+static const char* kSpecLabel[kSpN] = {"protons", "neutrons", "#pi^{#pm}",
                                          "#pi^{0}", "kaons"};
 static Color_t spec_color(int i) {
-   const Color_t c[kNspec] = {kRed + 1, kAzure + 2, kOrange + 7, kViolet + 1,
+   const Color_t c[kSpN] = {kRed + 1, kAzure + 2, kOrange + 7, kViolet + 1,
                               kGreen + 2};
    return c[i];
 }
 
 static int species_of(int pdg) {
    switch (pdg) {
-      case 2212: return kProt;
-      case 2112: return kNeut;
+      case 2212: return kSpProt;
+      case 2112: return kSpNeut;
       case 211:
-      case -211: return kPiC;
-      case 111: return kPi0;
+      case -211: return kSpPiC;
+      case 111: return kSpPi0;
       case 321:
       case -321:
       case 311:
       case -311:
       case 310:
-      case 130: return kKaon;
+      case 130: return kSpKaon;
       default: return -1;  // eta, Lambda, photon, leptons: not stacked
    }
 }
 
 // Accumulate per-decay mean species multiplicity; optionally fill a nucleon
 // (p+n) knockout-multiplicity histogram. Returns the number of events.
-static long read_mult(const std::string& fname, double mean[kNspec],
+static long read_mult(const std::string& fname, double mean[kSpN],
                       TH1* h_nucl) {
-   for (int i = 0; i < kNspec; ++i) mean[i] = 0.0;
+   for (int i = 0; i < kSpN; ++i) mean[i] = 0.0;
    std::ifstream in(fname);
    if (!in.is_open()) {
       printf("Warning: could not open %s (run make_plots.sh first)\n",
              fname.c_str());
       return 0;
    }
-   long counts[kNspec] = {0, 0, 0, 0, 0};
+   long counts[kSpN] = {0, 0, 0, 0, 0};
    long n = 0;
    int cur_nucl = 0;
    bool have_event = false;
@@ -91,7 +91,7 @@ static long read_mult(const std::string& fname, double mean[kNspec],
    }
    flush();  // last event
    if (n > 0)
-      for (int i = 0; i < kNspec; ++i) mean[i] = double(counts[i]) / n;
+      for (int i = 0; i < kSpN; ++i) mean[i] = double(counts[i]) / n;
    return n;
 }
 
@@ -109,8 +109,8 @@ void fsi_multiplicity() {
    };
    const int nchan = sizeof(chans) / sizeof(chans[0]);
 
-   TH1F* h[kNspec];
-   for (int s = 0; s < kNspec; ++s) {
+   TH1F* h[kSpN];
+   for (int s = 0; s < kSpN; ++s) {
       h[s] = new TH1F(Form("h_spec_%d", s), "", nchan, 0.0, nchan);
       h[s]->SetFillColor(spec_color(s));
       h[s]->SetLineColor(kBlack);
@@ -128,19 +128,19 @@ void fsi_multiplicity() {
    }
 
    for (int c = 0; c < nchan; ++c) {
-      double mean[kNspec];
+      double mean[kSpN];
       TH1* target = (std::string(chans[c].key) == "pToKnu")   ? hk_kp
                     : (std::string(chans[c].key) == "pToEPi0") ? hk_pi
                                                                : nullptr;
       long n = read_mult(Form("data/fsi_%s_on.txt", chans[c].key), mean, target);
-      for (int s = 0; s < kNspec; ++s) {
+      for (int s = 0; s < kSpN; ++s) {
          h[s]->SetBinContent(c + 1, mean[s]);
          h[s]->GetXaxis()->SetBinLabel(c + 1, chans[c].label);
       }
       if (sum)
          fprintf(sum, "  %-9s %8.4f %8.4f %8.4f %8.4f %8.4f %10ld\n",
-                 chans[c].key, mean[kProt], mean[kNeut], mean[kPiC], mean[kPi0],
-                 mean[kKaon], n);
+                 chans[c].key, mean[kSpProt], mean[kSpNeut], mean[kSpPiC], mean[kSpPi0],
+                 mean[kSpKaon], n);
    }
    if (sum) fclose(sum);
 
@@ -152,7 +152,7 @@ void fsi_multiplicity() {
    THStack* st = new THStack("st",
                              "Mean post-FSI final-state multiplicity by channel;;"
                              "mean particles per decay");
-   for (int s = 0; s < kNspec; ++s) st->Add(h[s]);
+   for (int s = 0; s < kSpN; ++s) st->Add(h[s]);
    st->Draw("hist bar2");
    st->GetXaxis()->SetLabelSize(0.048);
    st->GetXaxis()->LabelsOption("v");  // rotate the 14 channel names vertical
@@ -160,7 +160,7 @@ void fsi_multiplicity() {
    TLegend* leg = new TLegend(0.15, 0.70, 0.55, 0.90);
    leg->SetNColumns(2);
    leg->SetTextSize(0.030);
-   for (int s = 0; s < kNspec; ++s) leg->AddEntry(h[s], kSpecLabel[s], "f");
+   for (int s = 0; s < kSpN; ++s) leg->AddEntry(h[s], kSpecLabel[s], "f");
    leg->Draw();
 
    cv->cd(2);

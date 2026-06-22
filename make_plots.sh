@@ -14,6 +14,8 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
+mkdir -p plots report data
+
 N="${1:-200000}"
 SEED="${2:-1}"
 CHANNEL="${3:-pToKnu}"
