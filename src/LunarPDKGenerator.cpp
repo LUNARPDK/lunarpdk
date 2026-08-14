@@ -257,8 +257,12 @@ int main(int argc, char* argv[]) {
 
         // Run the hadron daughter through the residual-nucleus cascade. The
         // lepton daughter does not interact strongly and is reported as-is.
+        // The decay happens where the decaying nucleon is: local-density models
+        // report the radius they sampled (ns.r >= 0) and the vertex is placed
+        // there; models with no radius of their own (ns.r < 0) get an
+        // independent draw from the same Woods-Saxon weight.
         double vx, vy, vz;
-        cascade.sample_vertex(vx, vy, vz);
+        cascade.sample_vertex(vx, vy, vz, ns.r);
         pdk::FsiResult fr =
             cascade.propagate(pdk::Particle{hpdg, d2}, vx, vy, vz);
         const char* oc = pdk::outcome_name(fr.outcome);

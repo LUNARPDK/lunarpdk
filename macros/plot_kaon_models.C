@@ -75,6 +75,7 @@ void plot_kaon_models() {
 
       if (h->Integral() > 0) h->Scale(1.0 / h->Integral(), "width");
       h->SetLineColor(pdk_model_color(models[i]));
+      h->SetLineStyle(pdk_model_style(models[i]));
       h->SetLineWidth(2);
       hists[i] = h;
       ymax = TMath::Max(ymax, h->GetMaximum());
@@ -99,12 +100,15 @@ void plot_kaon_models() {
    ref->SetLineStyle(2);
    ref->SetLineColor(kGray + 2);
    ref->Draw();
+   // The label sits horizontally in the empty band above the curves rather than
+   // rotated alongside the line, where it ran straight through the peak of the
+   // distributions and was unreadable.
    TLatex tx;
    tx.SetTextFont(42);
    tx.SetTextColor(kGray + 2);
    tx.SetTextSize(0.028);
-   tx.SetTextAngle(90);
-   tx.DrawLatex(pK_free + 0.006, ymax * 0.35, "free decay  p_{K} = 0.339");
+   tx.SetTextAlign(12);  // left, vertically centred on the quoted y
+   tx.DrawLatex(pK_free + 0.010, ymax * 1.13, "free decay  p_{K} = 0.339 GeV/c");
 
    leg->Draw();
    pdk_label("kaon momentum");

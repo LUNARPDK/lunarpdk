@@ -188,9 +188,15 @@ turn it off with `--fsi off` (which restores the legacy momentum-only columns).
 | `--decay-mesons`| decay the escaped unstable mesons (π⁰/η → γγ, K⁰ → K_S/K_L, K_S → ππ); FSI-on only |
 
 **Model** (`include/PDKCascade.h`, following NuWro's `kaskada`): the decay vertex
-is sampled from the Woods-Saxon density ρ(r); the hadron is stepped in 0.05 fm
+sits where the decaying nucleon is — the local-density models (`lfg`, and the
+mean-field part of `sf`) already sampled a radius when they drew the nucleon, and
+the cascade reuses it, sampling only the direction; models with no radius of
+their own draw one independently from the same r²ρ(r) weight. The hadron is then
+stepped in 0.05 fm
 segments with a local mean free path λ = 1/(ρ·σ); on interaction a target
-nucleon is drawn from the local Fermi sphere, a sub-channel
+nucleon is drawn from a local Fermi sphere of radius k_F(r) — the spectators are
+always a local Fermi gas, independently of the `--model` chosen for the decaying
+nucleon — a sub-channel
 (elastic / charge-exchange / absorption / production) is chosen, the kinematics
 are generated in the projectile+target rest frame, and Pauli blocking is applied
 to every outgoing nucleon. Secondaries are cascaded to completion. Four-momentum
@@ -203,9 +209,16 @@ raw NuWro files are kept under `config/fsi/` for provenance). The K⁺/K⁰ (S=+
 nearly transparent), K̄ (S=−1, strongly absorbed via K̄N→Yπ) cross sections are
 short interpolation tables of the measured K-nucleon totals (Dover & Walker 1982;
 Friedman & Gal 2007; PDG), and the η (through the N\*(1535)) is an N\*(1535)
-Breit–Wigner. A neutral kaon is treated as a 50/50 incoherent K⁰/K̄⁰ mix.
+Breit–Wigner. A neutral kaon is propagated as the strangeness eigenstate it is
+produced in: the nucleon-decay modes emit a K⁰ (S = +1), which is nearly
+transparent like the K⁺, while a K̄⁰ (S = −1) made by charge exchange is strongly
+absorbed. The strong interaction conserves strangeness, and the nuclear traversal
+(~fm/c ~ 1e-23 s) is twelve orders of magnitude shorter than the K⁰_S lifetime,
+so no K⁰–K̄⁰ mixing develops inside the nucleus; mixing and decay are left to the
+out-of-nucleus stage in `PDKDecay.h`.
 Quasi-elastic and charge-exchange scattering is forward-peaked (`dσ/dt ∝ exp(B·t)`),
-reducing to isotropic at threshold.
+with representative slopes B = 4, 3, 5 GeV⁻² for πN, KN and NN, reducing to
+isotropic at threshold.
 
 **Formation zone** (`--formation-zone`, off by default): a freshly produced
 hadron is not yet a fully formed colour singlet and cannot re-interact at full

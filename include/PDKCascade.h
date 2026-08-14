@@ -288,13 +288,20 @@ public:
     }
 
     // Sample a decay vertex (x,y,z) [fm] from the r^2 rho(r) radial weight.
-    void sample_vertex(double& x, double& y, double& z) {
-        std::uniform_real_distribution<double> dr(0.0, np_.r_max);
-        std::uniform_real_distribution<double> dy(0.0, r2rho_max_);
-        double r;
-        while (true) {
-            r = dr(gen_);
-            if (dy(gen_) < r * r * nucleon_density(r, np_)) break;
+    // If `r_fixed` >= 0 the radius is taken as given---the local-density
+    // momentum models already drew one when they picked the decaying nucleon,
+    // and the decay must happen where that nucleon is---and only the direction
+    // is sampled. Models with no radius of their own pass a negative value and
+    // fall back to an independent draw from the same density.
+    void sample_vertex(double& x, double& y, double& z, double r_fixed = -1.0) {
+        double r = r_fixed;
+        if (r < 0.0) {
+            std::uniform_real_distribution<double> dr(0.0, np_.r_max);
+            std::uniform_real_distribution<double> dy(0.0, r2rho_max_);
+            while (true) {
+                r = dr(gen_);
+                if (dy(gen_) < r * r * nucleon_density(r, np_)) break;
+            }
         }
         double ux, uy, uz;
         random_direction(gen_, ux, uy, uz);

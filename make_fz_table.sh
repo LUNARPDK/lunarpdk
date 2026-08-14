@@ -29,9 +29,14 @@ MODEL="${3:-lfg}"
 CTAUS=(0.342 0.5 1.0)
 GEN=./build/LunarPDKGenerator
 
-# Channels in tab:fsi order, with their meson label.
-CHANS=(pToKnu pToMuK0 pToEEta pToEPi0 pToNuPip nToEKm)
-MESONS=("K+" "K0" "eta" "pi0" "pi+" "K-")
+# All fourteen channels, the six tab:fsi benchmarks first (so the first six rows
+# still reproduce that table) and the remaining eight after them: the event-rate
+# prediction needs every channel, because the formation-zone spread is what
+# supplies the FSI-model band on N (see src/EventPredictor.cpp).
+CHANS=(pToKnu pToMuK0 pToEEta pToEPi0 pToNuPip nToEKm \
+       pToMuPi0 pToEK0 pToMuEta nToEPim nToMuPim nToNuPi0 nToNuEta nToNuK0)
+MESONS=("K+" "K0" "eta" "pi0" "pi+" "K-" \
+        "pi0" "K0" "eta" "pi-" "pi-" "pi0" "eta" "K0")
 
 echo ">> Building..."
 make >/dev/null
@@ -50,6 +55,13 @@ yield_none() {
 }
 
 OUT=report/fz_summary.txt
+# Machine-readable companion of $OUT, read by EventPredictor to build the
+# FSI-model band on the predicted counts: one row per channel,
+#   <channel>  <yield_noFZ>  <yield at each c*tau_f in ${CTAUS[*]}>
+YOUT=report/fz_yields.txt
+{
+    echo "# channel yield_noFZ ${CTAUS[*]}   (primary-meson survival, model=$MODEL seed=$SEED events=$N)"
+} > "$YOUT"
 {
     echo "# Formation-zone impact on primary-meson survival yield (and clean-escape 'none' fraction)."
     echo "# Same sample as tab:fsi: model=$MODEL seed=$SEED events=$N. Baseline = FSI on, no formation zone."
@@ -59,11 +71,17 @@ OUT=report/fz_summary.txt
 
 for i in "${!CHANS[@]}"; do
     ch="${CHANS[$i]}"; meson="${MESONS[$i]}"
+    # Baseline: reuse the make_plots.sh sample only when it was generated with
+    # the same statistics, otherwise make our own. The scan is read as a ratio to
+    # this baseline, so baseline and scan must come from the same-size samples.
     base="data/fsi_${ch}_on.txt"
-    if [ ! -f "$base" ]; then
-        echo ">> [$ch] baseline missing; generating..."
-        "$GEN" --events "$N" --channel "$ch" --model "$MODEL" --seed "$SEED" --fsi on \
-               > "$base" 2>/dev/null
+    if [ ! -f "$base" ] || [ "$(grep -c '^# event' "$base")" -ne "$N" ]; then
+        base="data/fzbase_${ch}.txt"
+        if [ ! -f "$base" ]; then
+            echo ">> [$ch] generating baseline at $N events..."
+            "$GEN" --events "$N" --channel "$ch" --model "$MODEL" --seed "$SEED" \
+                   --fsi on > "$base" 2>/dev/null
+        fi
     fi
 
     echo ">> [$ch] ($meson) tallying baseline + formation zone scan..."
@@ -79,6 +97,7 @@ for i in "${!CHANS[@]}"; do
     done
 
     printf "  %-9s %6s | %s | %s\n" "$ch" "$meson" "${ys[*]}" "${ns[*]}" >> "$OUT"
+    printf "%s %s\n" "$ch" "${ys[*]}" >> "$YOUT"
 done
 
 echo ">> Done. Summary:"

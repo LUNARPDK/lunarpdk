@@ -5,13 +5,12 @@
 // Reads report/event_predictions.txt (written by build/EventPredictor) and draws,
 // for every channel with a current experimental lifetime limit, the expected
 // count in 400 kt.yr at tau = the SuperK 90% C.L. limit:
-//   * filled marker + horizontal error bar = central count with the nuclear-model
+//   * filled marker + thick horizontal bar = central count with the nuclear-model
 //     band (spread of the signal-window efficiency across the ten models);
-//   * open marker = the FSI-unfolded count (N_cen / eps_FSI), so the gap between
-//     the two shows the cascade's suppression. For the two DUNE-documented modes
-//     (p->K+ nu, p->e+ pi0) the published DUNE efficiency already includes FSI;
-//     unfolding eps_FSI keeps that suppression visible (e.g. the p->e+ pi0 gap),
-//     rather than hiding it inside eps_det.
+//   * thin horizontal bar = the FSI-model band, from the default cascade up to the
+//     largest formation time in the formation-zone scan;
+//   * open marker = the FSI-unfolded count (N_cen / eps_FSI = rate * eps_det), so
+//     the gap between the two markers shows the cascade's suppression.
 // A dashed line at N = 1 marks the one-event threshold. Log-x, since the counts
 // span several orders of magnitude.
 //
@@ -53,21 +52,22 @@ void plot_predictions() {
    }
 
    std::vector<std::string> keys;
-   std::vector<double> ncen, nlo, nhi, noff;
+   std::vector<double> ncen, nlo, nhi, nfz, noff;
    std::string line;
    while (std::getline(in, line)) {
       if (line.empty() || line[0] == '#') continue;
       std::istringstream ss(line);
       std::string key, parent;
-      double tau, edet, efsi, wlo, whi, nc, nl, nh, no;
+      double tau, edet, efsi, wlo, whi, nc, nl, nh, nf, no;
       if (!(ss >> key >> parent >> tau >> edet >> efsi >> wlo >> whi >> nc >>
-            nl >> nh >> no))
+            nl >> nh >> nf >> no))
          continue;
       if (nc <= 0) continue;  // no limit -> skip
       keys.push_back(key);
       ncen.push_back(nc);
       nlo.push_back(nl);
       nhi.push_back(nh);
+      nfz.push_back(nf);
       noff.push_back(no);
    }
    const int n = keys.size();
@@ -79,7 +79,7 @@ void plot_predictions() {
    // x-range across all positive values.
    double xmin = 1e30, xmax = -1e30;
    for (int i = 0; i < n; ++i) {
-      for (double v : {nlo[i], ncen[i], nhi[i], noff[i]})
+      for (double v : {nlo[i], ncen[i], nhi[i], nfz[i], noff[i]})
          if (v > 0) { xmin = TMath::Min(xmin, v); xmax = TMath::Max(xmax, v); }
    }
    xmin *= 0.4;
@@ -97,11 +97,18 @@ void plot_predictions() {
    fr->SetStats(0);
 
    TGraphAsymmErrors* g_on = new TGraphAsymmErrors(n);  // FSI on, with model band
+   TGraphAsymmErrors* g_fz = new TGraphAsymmErrors(n);  // FSI-model (formation
+                                                        // zone) band
    TGraphAsymmErrors* g_off = new TGraphAsymmErrors(n);  // FSI off
    for (int i = 0; i < n; ++i) {
       double y = n - i - 0.5;  // first row near top
       g_on->SetPoint(i, ncen[i], y);
       g_on->SetPointError(i, ncen[i] - nlo[i], nhi[i] - ncen[i], 0.0, 0.0);
+      // The FSI-model band is one-sided: the formation zone can only recover
+      // yield, so it runs from the default cascade up to the largest c*tau_f.
+      // Drawn on a slightly offset row so the two bands stay readable.
+      g_fz->SetPoint(i, ncen[i], y - 0.22);
+      g_fz->SetPointError(i, 0.0, nfz[i] - ncen[i], 0.0, 0.0);
       g_off->SetPoint(i, noff[i], y);
       g_off->SetPointError(i, 0.0, 0.0, 0.0, 0.0);
    }
@@ -109,7 +116,10 @@ void plot_predictions() {
    g_on->SetMarkerSize(1.2);
    g_on->SetMarkerColor(kAzure + 2);
    g_on->SetLineColor(kAzure + 2);
-   g_on->SetLineWidth(2);
+   g_on->SetLineWidth(3);
+   g_fz->SetMarkerStyle(1);
+   g_fz->SetLineColor(kGreen + 2);
+   g_fz->SetLineWidth(2);
    g_off->SetMarkerStyle(24);
    g_off->SetMarkerSize(1.2);
    g_off->SetMarkerColor(kRed + 1);
@@ -120,6 +130,7 @@ void plot_predictions() {
    cv->SetLeftMargin(0.20);
    cv->SetGridx();
    fr->Draw("AXIS");
+   g_fz->Draw("P SAME");
    g_on->Draw("P SAME");
    g_off->Draw("P SAME");
 
@@ -130,8 +141,10 @@ void plot_predictions() {
    one->SetLineWidth(2);
    one->Draw();
 
-   TLegend* leg = new TLegend(0.58, 0.78, 0.93, 0.90);
-   leg->AddEntry(g_on, "FSI on (band = nucl. models)", "pl");
+   TLegend* leg = new TLegend(0.54, 0.72, 0.94, 0.90);
+   leg->SetTextSize(0.033);
+   leg->AddEntry(g_on, "FSI on (band = nuclear models)", "pl");
+   leg->AddEntry(g_fz, "FSI-model band (formation zone)", "l");
    leg->AddEntry(g_off, "cascade off", "p");
    leg->AddEntry(one, "1 event", "l");
    leg->Draw();

@@ -116,9 +116,15 @@ root -l -b -q macros/plot_ankowski_sf.C
 root -l -b -q macros/plot_xsec.C
 root -l -b -q macros/offshell_W.C
 
-# DUNE event-rate predictions: fold the MC efficiency tables (window + FSI) into
-# the per-channel expected counts, then plot them. Must run after the macros that
-# write report/{window_summary,fsi_summary}.txt above.
+# Formation-zone scan over all channels: the spread between the default cascade
+# and the largest formation time is the FSI-model band carried by the event-rate
+# prediction, so this has to run before EventPredictor.
+echo ">> Formation-zone scan (all channels) -> report/fz_yields.txt"
+./make_fz_table.sh "$N" "$SEED"
+
+# DUNE event-rate predictions: fold the MC efficiency tables (window + FSI + the
+# formation-zone scan) into the per-channel expected counts, then plot them. Must
+# run after the macros that write report/{window_summary,fsi_summary}.txt above.
 echo ">> Predicting DUNE event rates across all channels..."
 ./build/EventPredictor          # writes report/event_predictions.txt
 root -l -b -q macros/plot_predictions.C

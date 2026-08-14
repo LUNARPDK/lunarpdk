@@ -90,6 +90,27 @@ inline Color_t pdk_model_color(const std::string& key) {
    return it == m.end() ? kBlack : it->second;
 }
 
+// Line style per model, so the ten overlaid curves stay distinguishable when the
+// figure is printed in greyscale or read by a colour-blind reader: colour alone
+// cannot separate ten curves that partly overlap.
+//
+// Only five styles are used --- solid, dashed, dotted, long-dash and
+// dash-dot-dot --- because ROOT's remaining patterns are too fine to survive the
+// dense polyline of a 100-bin histogram outline and end up looking alike. Each
+// style is therefore shared by exactly two models, which are always given very
+// different colours, so no two curves share both attributes.
+inline Style_t pdk_model_style(const std::string& key) {
+   static const std::map<std::string, Style_t> m = {
+       {"gfg", 1},  {"br", 1},          // solid:          blue     / olive
+       {"lfg", 2},  {"cfg", 2},         // dashed:         green    / pink
+       {"src", 3},  {"ankowski", 3},    // dotted:         red      / cyan
+       {"sf", 7},   {"gauss", 7},       // long dash:      magenta  / grey
+       {"hosm", 9}, {"benhar", 9},      // dash-dot-dot:   violet   / orange
+   };
+   auto it = m.find(key);
+   return it == m.end() ? 1 : it->second;
+}
+
 inline const char* pdk_model_label(const std::string& key) {
    static const std::map<std::string, std::string> m = {
        {"gfg", "Global Fermi gas"}, {"lfg", "Local Fermi gas"},
@@ -109,6 +130,15 @@ inline Color_t pdk_binding_color(const std::string& key) {
    };
    auto it = m.find(key);
    return it == m.end() ? kBlack : it->second;
+}
+
+// Line style per binding model (same rationale as pdk_model_style).
+inline Style_t pdk_binding_style(const std::string& key) {
+   static const std::map<std::string, Style_t> m = {
+       {"potential", 1}, {"constant", 2}, {"shell", 7},
+   };
+   auto it = m.find(key);
+   return it == m.end() ? 1 : it->second;
 }
 
 inline const char* pdk_binding_label(const std::string& key) {

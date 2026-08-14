@@ -69,16 +69,27 @@ void plot_xsec() {
 
    // ---- pad 2: N-N total + inelastic vs nucleon kinetic energy -------------
    cv->cd(2);
-   TGraph* g_pp = mkgraph(N, kRed + 1);          // pp/nn total
-   TGraph* g_pn = mkgraph(N, kAzure + 2);        // pn total
-   TGraph* g_pp_in = mkgraph(N, kRed + 1, 2);    // pp/nn inelastic (dashed)
-   TGraph* g_pn_in = mkgraph(N, kAzure + 2, 2);  // pn inelastic (dashed)
+   // The two inelastic curves are dashed, and a dash pattern only survives if the
+   // polyline segments are longer than the dashes themselves: sampled on the same
+   // dense grid as the totals they render as solid lines, which is what made the
+   // legend disagree with the plot. They are piecewise-linear interpolations of a
+   // short table, so a coarse grid loses no information.
+   const int Nc = N / 6;
+   TGraph* g_pp = mkgraph(N, kRed + 1);           // pp/nn total
+   TGraph* g_pn = mkgraph(N, kAzure + 2);         // pn total
+   TGraph* g_pp_in = mkgraph(Nc, kRed + 1, 2);    // pp/nn inelastic (dashed)
+   TGraph* g_pn_in = mkgraph(Nc, kAzure + 2, 2);  // pn inelastic (dashed)
    for (int i = 0; i < N; ++i) {
       double T = 0.001 + 2.0 * i / (N - 1);  // GeV
       NNXsec pp = nucleon_nucleon(T, kPdgProton, kPdgProton);
       NNXsec pn = nucleon_nucleon(T, kPdgProton, kPdgNeutron);
       g_pp->SetPoint(i, T, pp.total);
       g_pn->SetPoint(i, T, pn.total);
+   }
+   for (int i = 0; i < Nc; ++i) {
+      double T = 0.001 + 2.0 * i / (Nc - 1);  // GeV
+      NNXsec pp = nucleon_nucleon(T, kPdgProton, kPdgProton);
+      NNXsec pn = nucleon_nucleon(T, kPdgProton, kPdgNeutron);
       g_pp_in->SetPoint(i, T, pp.total * pp.f_prod);
       g_pn_in->SetPoint(i, T, pn.total * pn.f_prod);
    }

@@ -287,6 +287,13 @@ inline bool parse_binding(std::string s, BindingModel& out) {
 struct NucleonState {
     double p;      // momentum magnitude [GeV/c]
     double e_rem;  // removal (separation) energy [GeV]
+    // Radius [fm] at which the nucleon was sampled, for the local-density models
+    // that draw one (lfg, and the mean-field part of sf). The cascade reuses it
+    // as the decay vertex so that the decaying nucleon and the vertex sit at the
+    // same point of the nucleus. Negative means "this model has no radius": the
+    // momentum was drawn from a global distribution, and the vertex is then
+    // sampled independently from the same r^2 rho(r) weight.
+    double r = -1.0;
 };
 
 // Samples the initial nucleon state under the chosen model for the given parent
@@ -362,9 +369,9 @@ public:
                 return {p, mean_field_removal(k_fermi_, p, gen)};
             }
             case MomentumModel::LocalFermiGas: {
-                double kf;
-                double p = sample_lfg(gen, kf);
-                return {p, mean_field_removal(kf, p, gen)};
+                double kf, r;
+                double p = sample_lfg(gen, kf, r);
+                return {p, mean_field_removal(kf, p, gen), r};
             }
             case MomentumModel::SRC:
                 if (draw_src(gen)) {
@@ -379,9 +386,9 @@ public:
                     double p = sample_tail(k_fermi_, gen);
                     return {p, src_removal(p)};
                 } else {
-                    double kf;
-                    double p = sample_lfg(gen, kf);
-                    return {p, mean_field_removal(kf, p, gen)};
+                    double kf, r;
+                    double p = sample_lfg(gen, kf, r);
+                    return {p, mean_field_removal(kf, p, gen), r};
                 }
             case MomentumModel::HarmonicOscillator: {
                 // Pick a shell (occupancy-weighted), draw p from its HO momentum
@@ -523,8 +530,9 @@ private:
 
     // Local Fermi gas: pick a radius weighted by r^2 rho(r), then sample the
     // local Fermi sphere with k_F(r). Reports the local k_F via kf_out so the
-    // caller can evaluate the binding potential at the same density.
-    double sample_lfg(std::mt19937& gen, double& kf_out) const {
+    // caller can evaluate the binding potential at the same density, and the
+    // radius itself via r_out so the cascade can put the decay vertex there.
+    double sample_lfg(std::mt19937& gen, double& kf_out, double& r_out) const {
         std::uniform_real_distribution<double> dr(0.0, np_.r_max);
         std::uniform_real_distribution<double> dy(0.0, r2rho_max_);
         double r;
@@ -532,6 +540,7 @@ private:
             r = dr(gen);
             if (dy(gen) < r * r * density(r)) break;
         }
+        r_out = r;
         kf_out = local_kf(r);
         return sample_fermi_sphere(kf_out, gen);
     }

@@ -66,6 +66,7 @@ void plot_models() {
 
       if (h->Integral() > 0) h->Scale(1.0 / h->Integral(), "width");
       h->SetLineColor(pdk_model_color(models[i]));
+      h->SetLineStyle(pdk_model_style(models[i]));
       h->SetLineWidth(2);
       hists[i] = h;
       ymax = TMath::Max(ymax, h->GetMaximum());

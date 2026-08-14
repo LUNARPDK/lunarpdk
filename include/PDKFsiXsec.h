@@ -187,8 +187,16 @@ struct KaonXsec {
 //   * Kbar component (S=-1): strong, sigma ~ 30-100 mb rising toward threshold,
 //     with dominant strangeness-exchange absorption Kbar N -> Lambda/Sigma + pi
 //     whose fraction also rises toward threshold.
-// A neutral kaon (K0/K0bar, |pdg| = 311) is treated as a 50/50 incoherent mix
-// of the S=+1 and S=-1 behaviours, the standard cascade approximation.
+// A neutral kaon is propagated as the strangeness eigenstate it is produced in,
+// not as a K0_S/K0_L (or 50/50 incoherent) mixture: the nucleon-decay modes
+// p -> l+ K0 and n -> nubar K0 emit a |K0> (S = +1), which therefore interacts
+// with the S=+1 cross sections, while a K0bar (S = -1) created by charge
+// exchange interacts with the strong, absorption-dominated Kbar N ones. The
+// strong interaction conserves strangeness, and the nuclear traversal time
+// (~fm/c ~ 1e-23 s) is some twelve orders of magnitude shorter than the K0_S
+// lifetime, so no K0-K0bar mixing can develop while the kaon is inside the
+// nucleus. Mixing and decay are left to the (weak, out-of-nucleus) stage
+// handled by PDKDecay.h.
 inline KaonXsec kaon_nucleon(double p_lab, int kaon_pdg, int nucleon_pdg) {
     // S=+1 totals [mb] vs kaon momentum [GeV/c] (K+ p pure I=1; K+ n I=0+I=1).
     // K+ p is the textbook "small and flat" cross section, ~10-12 mb essentially
@@ -223,27 +231,22 @@ inline KaonXsec kaon_nucleon(double p_lab, int kaon_pdg, int nucleon_pdg) {
     auto kbar_like = [&](KaonXsec& k, bool on_proton) {
         k.total = interp(pKb, on_proton ? sKmp : sKmn, nKb, p_lab);
         k.f_abs = interp(fap, fav, nfa, p_lab);  // Kbar N -> Y pi
-        k.f_cex = 0.10;                          // K- p <-> K0bar n
+        // Charge exchange only off the unlike nucleon: K- p -> K0bar n and
+        // K0bar n -> K- p (the mirror of the S=+1 case above).
+        const bool cex_allowed =
+            (kaon_pdg == kPdgKMinus && nucleon_pdg == kPdgProton) ||
+            (kaon_pdg == kPdgK0bar && nucleon_pdg == kPdgNeutron);
+        k.f_cex = cex_allowed ? 0.10 : 0.0;
         k.f_elastic = 1.0 - k.f_abs - k.f_cex;
         if (k.f_elastic < 0.0) k.f_elastic = 0.0;
     };
 
     KaonXsec out;
     const bool on_proton = (nucleon_pdg == kPdgProton);
-    if (kaon_pdg == kPdgKPlus) {
-        kplus_like(out, on_proton);
-    } else if (kaon_pdg == kPdgKMinus) {
-        kbar_like(out, on_proton);
-    } else {  // neutral kaon: 50/50 incoherent K0 (S=+1) / K0bar (S=-1) mix
-        KaonXsec a, b;
-        kplus_like(a, on_proton);
-        kbar_like(b, on_proton);
-        out.total = 0.5 * (a.total + b.total);
-        if (out.total <= 0.0) { out.f_elastic = 1.0; return out; }
-        out.f_elastic =
-            0.5 * (a.total * a.f_elastic + b.total * b.f_elastic) / out.total;
-        out.f_cex = 0.5 * (a.total * a.f_cex + b.total * b.f_cex) / out.total;
-        out.f_abs = 0.5 * (a.total * a.f_abs + b.total * b.f_abs) / out.total;
+    if (kaon_pdg == kPdgKPlus || kaon_pdg == kPdgK0) {
+        kplus_like(out, on_proton);   // S = +1: K+ and K0
+    } else {
+        kbar_like(out, on_proton);    // S = -1: K- and K0bar
     }
     return out;
 }
